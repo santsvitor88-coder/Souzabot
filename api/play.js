@@ -1,40 +1,37 @@
-import ytdl from "ytdl-core"
-import yts from "yt-search"
-
 export default async function handler(req, res) {
-  const { q } = req.query
-  const key = req.headers.authorization
-
-  // 🔐 Proteção com sua chave
-  if (key !== "botdosouza") {
-    return res.status(403).json({ error: "❌ Chave inválida ou ausente" })
-  }
-
-  // 🧐 Verifica se foi enviado o nome da música
-  if (!q) {
-    return res.status(400).json({ error: "❌ Você precisa informar o nome da música!" })
-  }
-
   try {
-    // 🔍 Busca no YouTube
-    const search = await yts(q)
-    const video = search.videos[0]
-    if (!video) return res.status(404).json({ error: "❌ Nenhum vídeo encontrado." })
+    const { apikey, query } = req.query;
 
-    // 🎵 Gera o link de áudio
-    const info = await ytdl.getInfo(video.url)
-    const format = ytdl.chooseFormat(info.formats, { filter: "audioonly" })
+    // 🔒 Validação da chave
+    if (apikey !== 'Souzapzzy') {
+      return res.status(403).json({ error: '❌ Chave inválida ou ausente' });
+    }
 
-    res.status(200).json({
-      sucesso: true,
-      titulo: video.title,
-      url: format.url,
-      canal: video.author.name,
-      duracao: video.timestamp,
-      thumbnail: video.thumbnail
-    })
+    if (!query) {
+      return res.status(400).json({ error: '❌ Informe o nome da música ou link!' });
+    }
+
+    // 🔍 Usa API pública de música (sem precisar de ytdl-core)
+    const url = `https://api.akuari.my.id/downloader/youtube2?link=${encodeURIComponent(query)}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data || !data.audio) {
+      return res.status(404).json({ error: '⚠️ Música não encontrada' });
+    }
+
+    // ✅ Retorna dados prontos para o bot
+    return res.status(200).json({
+      status: true,
+      title: data.title,
+      thumbnail: data.thumbnail,
+      audio: data.audio,
+      by: 'SouzaBOT'
+    });
+
   } catch (err) {
-    console.error("Erro na rota /api/play:", err)
-    res.status(500).json({ error: "⚠️ Erro interno ao processar a música." })
+    console.error('Erro no endpoint /api/play:', err);
+    return res.status(500).json({ error: '💥 Erro interno na API' });
   }
-      }
+}
