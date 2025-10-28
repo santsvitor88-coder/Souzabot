@@ -1,37 +1,56 @@
+import ytdl from "ytdl-core";
+import ytSearch from "yt-search";
+
 export default async function handler(req, res) {
   try {
-    const { apikey, query } = req.query;
+    const { query, apikey } = req.query;
 
-    // 🔒 Validação da chave
-    if (apikey !== 'Souzapzzy') {
-      return res.status(403).json({ error: '❌ Chave inválida ou ausente' });
+    // 🔑 Verificação da chave
+    const keyValida = "Souzapzzy";
+    if (apikey !== keyValida)
+      return res.status(401).json({ status: false, msg: "❌ Chave inválida!" });
+
+    if (!query)
+      return res.status(400).json({ status: false, msg: "❌ Nenhuma música informada." });
+
+    // 🎯 Trata links curtos de Shorts e busca por nome
+    let videoUrl;
+    if (query.includes("youtube.com") || query.includes("youtu.be")) {
+      // Converte Shorts -> formato watch?v=
+      videoUrl = query
+        .replace("shorts/", "watch?v=")
+        .replace("youtu.be/", "youtube.com/watch?v=");
+    } else {
+      // Pesquisa no YouTube se for texto
+      const result = await ytSearch(query);
+      if (!result.videos.length)
+        return res.status(404).json({ status: false, msg: "❌ Nenhum vídeo encontrado." });
+
+      videoUrl = result.videos[0].url;
     }
 
-    if (!query) {
-      return res.status(400).json({ error: '❌ Informe o nome da música ou link!' });
-    }
+    // 🔊 Obtém informações do vídeo
+    const info = await ytdl.getInfo(videoUrl);
+    const title = info.videoDetails.title;
 
-    // 🔍 Usa API pública de música (sem precisar de ytdl-core)
-    const url = `https://api.akuari.my.id/downloader/youtube2?link=${encodeURIComponent(query)}`;
+    // 🎵 Gera link de áudio direto
+    const audioFormat = ytdl.chooseFormat(info.formats, { quality: "highestaudio" });
 
-    const response = await fetch(url);
-    const data = await response.json();
+    if (!audioFormat || !audioFormat.url)
+      return res.status(500).json({ status: false, msg: "❌ Falha ao obter áudio." });
 
-    if (!data || !data.audio) {
-      return res.status(404).json({ error: '⚠️ Música não encontrada' });
-    }
-
-    // ✅ Retorna dados prontos para o bot
     return res.status(200).json({
       status: true,
-      title: data.title,
-      thumbnail: data.thumbnail,
-      audio: data.audio,
-      by: 'SouzaBOT'
+      title,
+      audio: audioFormat.url,
+      url: videoUrl,
     });
-
-  } catch (err) {
-    console.error('Erro no endpoint /api/play:', err);
-    return res.status(500).json({ error: '💥 Erro interno na API' });
+  } catch (e) {
+    console.error("Erro na API /play:", e);
+    return res.status(500).json({
+      status: false,
+      msg: "⚠️ Erro interno no servidor.",
+      erro: e.message,
+    });
   }
 }
