@@ -1,9 +1,9 @@
 {
-  "type": "module",
   "name": "souza-bot-base-limpa",
   "version": "1.0.0",
-  "description": "Souza-BOT Base — conexão WhatsApp via Baileys, com suporte a index.js e conection.js",
+  "description": "Souza-BOT Base - conexão WhatsApp via Baileys, com suporte a index.js e conection.js",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "pair": "node conection.js --code"
@@ -11,10 +11,11 @@
   "author": "Souza",
   "license": "MIT",
   "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
     "@whiskeysockets/baileys": "^6.7.6",
+    "fs-extra": "^11.2.0",
     "pino": "^9.7.0",
     "qrcode-terminal": "^0.12.0",
-    "fs-extra": "^11.2.0"
+    "yt-search": "^2.13.1"
   }
 }
-
