@@ -13,27 +13,24 @@ export default async function handler(req, res) {
     if (!query)
       return res.status(400).json({ status: false, msg: "❌ Nenhuma música informada." });
 
-    // 🎯 Trata links curtos de Shorts e busca por nome
+    // 🎯 Trata links curtos e busca por nome
     let videoUrl;
     if (query.includes("youtube.com") || query.includes("youtu.be")) {
-      // Converte Shorts -> formato watch?v=
       videoUrl = query
         .replace("shorts/", "watch?v=")
         .replace("youtu.be/", "youtube.com/watch?v=");
     } else {
-      // Pesquisa no YouTube se for texto
       const result = await ytSearch(query);
       if (!result.videos.length)
         return res.status(404).json({ status: false, msg: "❌ Nenhum vídeo encontrado." });
-
       videoUrl = result.videos[0].url;
     }
 
-    // 🔊 Obtém informações do vídeo
+    // 📜 Obtém informações do vídeo
     const info = await ytdl.getInfo(videoUrl);
     const title = info.videoDetails.title;
 
-    // 🎵 Gera link de áudio direto
+    // 🎵 Pega link direto do áudio
     const audioFormat = ytdl.chooseFormat(info.formats, { quality: "highestaudio" });
 
     if (!audioFormat || !audioFormat.url)
@@ -46,7 +43,7 @@ export default async function handler(req, res) {
       url: videoUrl,
     });
   } catch (e) {
-    console.error("Erro na API /play:", e);
+    console.error("Erro na API:", e);
     return res.status(500).json({
       status: false,
       msg: "⚠️ Erro interno no servidor.",
