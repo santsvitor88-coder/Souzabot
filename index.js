@@ -1,14 +1,26 @@
 /*
  * 🧠 Souza-BOT Base com suporte a plugins
- * Conexão via Baileys + carregamento automático de plugins
+ * 🔌 Conexão via Baileys + carregamento automático de plugins
  */
+
+// 🔑 Chave fixa do SouzaBOT
+const souzakey = 'Souzapzzy' // ← coloque sua chave aqui
+global.souzakey = souzakey
+
+// 🧩 Teste de chave no topo do Index.js
+console.log('===============================')
+console.log('🟢 Iniciando SouzaBOT...')
+console.log('🔑 Verificando chave...')
+console.log('Chave atual:', souzakey || '❌ Nenhuma chave detectada!')
+console.log('===============================')
 
 import makeWASocket, { useMultiFileAuthState, fetchLatestBaileysVersion } from "@whiskeysockets/baileys"
 import pino from "pino"
 import qrcode from "qrcode-terminal"
 import fs from "fs"
 import path from "path"
-import { DONOS } from './dono/donos.js'
+import { DONOS } from "./dono/donos.js"
+
 
 async function iniciarBot() {
   const { state, saveCreds } = await useMultiFileAuthState('./auth')
@@ -325,4 +337,4 @@ async function conectar() {
 
 conectar()
 
-    
+          
