@@ -1,0 +1,53 @@
+export default {
+  name: "prefixo",
+  run: async (sock, msg, args) => {
+    try {
+      const fs = await import("fs")
+      const path = await import("path")
+      const prefixPath = path.join(process.cwd(), "prefixo.json")
+      const from = msg.key.remoteJid
+      const isGroup = from.endsWith("@g.us")
+
+      // 🔧 Cria prefixo.json se não existir
+      if (!fs.existsSync(prefixPath)) {
+        fs.writeFileSync(prefixPath, JSON.stringify({ prefixo: "!" }, null, 2))
+      }
+
+      // 📖 Lê prefixo atual
+      const dados = JSON.parse(fs.readFileSync(prefixPath))
+      const prefixoAtual = dados.prefixo || "!"
+
+      // ⚠️ Se o usuário só digitou /prefixo, mostra o atual
+      if (!args[0]) {
+        await sock.sendMessage(from, { text: `⚙️ O prefixo atual é: *${prefixoAtual}*` })
+        return
+      }
+
+      // ⚙️ Novo prefixo informado
+      const novoPrefixo = args[0].trim()
+
+      // 👑 Se for grupo, verifica se é admin
+      if (isGroup) {
+        const groupMetadata = await sock.groupMetadata(from)
+        const sender = msg.key.participant || msg.participant || msg.key.remoteJid
+        const admins = groupMetadata.participants
+          .filter(p => p.admin === "admin" || p.admin === "superadmin")
+          .map(p => p.id)
+        const isAdmin = admins.includes(sender)
+
+        if (!isAdmin) {
+          await sock.sendMessage(from, { text: "🚫 Apenas administradores podem mudar o prefixo!" })
+          return
+        }
+      }
+
+      // ✍️ Salva o novo prefixo
+      fs.writeFileSync(prefixPath, JSON.stringify({ prefixo: novoPrefixo }, null, 2))
+
+      await sock.sendMessage(from, { text: `✅ Prefixo alterado com sucesso!\n📌 Novo prefixo: *${novoPrefixo}*` })
+    } catch (e) {
+      console.error(e)
+      await sock.sendMessage(msg.key.remoteJid, { text: "❌ Erro ao atualizar o prefixo." })
+    }
+  }
+}
